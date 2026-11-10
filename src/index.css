@@ -467,3 +467,16 @@ input:focus, select:focus { border-color: var(--merek); outline: none; box-shado
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* ================= Akun: profil, keluar, password, Google ================= */
+.kartu-profil { display: flex; align-items: center; gap: 14px; }
+.kartu-profil:hover { background: var(--permukaan-2); }
+.avatar.besar { width: 48px; height: 48px; font-size: 1.2rem; }
+.tombol-keluar { margin-top: 4px; }
+.centang { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--teks-2); cursor: pointer; }
+.centang input { width: 18px; height: 18px; min-height: 0; accent-color: var(--merek); }
+.form-password > div:first-child { display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 559px) { .form-password .baris-dua { grid-template-columns: 1fr; } }
+.tombol-google { gap: 10px; background: var(--permukaan); border-color: var(--garis-kuat); font-weight: 600; }
+.pemisah { display: flex; align-items: center; gap: 12px; color: var(--teks-2); font-size: 0.85rem; }
+.pemisah::before, .pemisah::after { content: ''; flex: 1; height: 1px; background: var(--garis); }

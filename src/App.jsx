@@ -60,7 +60,7 @@ function Aplikasi({ user, onUserBerubah }) {
       case '/': halaman = <Beranda user={user} />; break
       case '/riwayat': halaman = <Riwayat key={JSON.stringify(query)} query={query} />; break
       case '/laporan': halaman = <Laporan query={query} />; break
-      case '/lainnya': halaman = <Lainnya />; break
+      case '/lainnya': halaman = <Lainnya user={user} />; break
       case '/dompet': halaman = <Dompet />; break
       case '/kategori': halaman = <Kategori />; break
       case '/pengaturan': halaman = <Pengaturan user={user} onUserBerubah={onUserBerubah} />; break

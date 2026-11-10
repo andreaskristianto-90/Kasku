@@ -31,6 +31,34 @@ Tanpa konfigurasi Supabase, aplikasi berjalan dalam **Mode Demo**: login dengan 
 
 Secara bawaan Supabase mewajibkan konfirmasi email saat daftar. Untuk mencoba lebih cepat, matikan di **Authentication → Providers → Email → Confirm email**.
 
+## Mengaktifkan login Google
+
+Tombol **Lanjutkan dengan Google** di halaman Masuk otomatis muncul setelah provider Google aktif di Supabase. Langkahnya:
+
+**A. Google Cloud Console — buat OAuth client**
+1. Buka https://console.cloud.google.com → pilih/buat project (mis. `Kasku`).
+2. Menu **Google Auth Platform** (atau *APIs & Services → OAuth consent screen*) → **Get started**:
+   - App name: `Kasku`, User support email: email kamu
+   - Audience: **External**
+   - Contact information: email kamu → setujui kebijakan → **Create**
+3. **Audience** → bagian *Test users* → **Add users** → masukkan email Google yang akan dipakai mencoba. Selama status aplikasi *Testing*, hanya akun di daftar ini yang bisa masuk. Untuk dibuka ke semua orang, tekan **Publish app** (scope yang dipakai hanya email & profil dasar).
+4. **Clients** → **Create client**:
+   - Application type: **Web application**, Name: `Kasku Web`
+   - Authorized JavaScript origins: `https://kasku-app.pages.dev` dan `http://localhost:5180`
+   - Authorized redirect URIs: `https://fqpayovldqxjllxehvua.supabase.co/auth/v1/callback`
+   - **Create** → salin **Client ID** dan **Client secret** (jangan dibagikan; secret hanya ditempel di Supabase).
+
+**B. Supabase — aktifkan provider Google**
+1. Buka https://supabase.com/dashboard/project/fqpayovldqxjllxehvua/auth/providers
+2. Klik **Google** → aktifkan **Enable Sign in with Google**.
+3. Tempel **Client ID** dan **Client Secret** dari langkah A.4 → **Save**.
+4. Pastikan *Authentication → URL Configuration* berisi Site URL `https://kasku-app.pages.dev` dan Redirect URLs `https://kasku-app.pages.dev/**` serta `http://localhost:5180/**` (sudah diatur).
+
+**C. Coba**
+Buka https://kasku-app.pages.dev (muat ulang) → tombol Google muncul → pilih akun → kembali ke Kasku dan langsung masuk. Akun Google dengan email yang sama dengan akun email yang sudah ada akan digabung otomatis oleh Supabase.
+
+Tidak perlu mengubah kode atau Cloudflare: aplikasi membaca status provider langsung dari Supabase.
+
 ## Deploy ke Cloudflare Pages
 
 - Build command: `npm run build`
@@ -41,7 +69,7 @@ Secara bawaan Supabase mewajibkan konfirmasi email saat daftar. Untuk mencoba le
 
 | Halaman | Fungsi |
 |---|---|
-| Masuk / Daftar | Daftar, masuk, lupa password (link reset via email) |
+| Masuk / Daftar | Daftar, masuk, lupa password (link reset via email), login Google (jika diaktifkan) |
 | Onboarding | Buat dompet pertama + saldo awal; kategori bawaan dibuat otomatis |
 | Beranda | Kartu statistik (saldo, pemasukan, pengeluaran, arus kas bersih + % vs bulan lalu), grafik arus kas 6 bulan, dompet, transaksi terakhir |
 | Catat / Ubah transaksi | Pengeluaran, Pemasukan, Transfer; Simpan & catat lagi; Duplikat; Hapus |
@@ -49,7 +77,8 @@ Secara bawaan Supabase mewajibkan konfirmasi email saat daftar. Untuk mencoba le
 | Laporan | Kartu statistik + rasio tabungan, grafik Arus Kas 6 bulan (pemasukan/pengeluaran/keduanya), donat pengeluaran per kategori, pengeluaran terbesar, Insight & Tren otomatis |
 | Dompet | Tambah, ubah, arsipkan; hapus hanya jika belum ada transaksi |
 | Kategori | Tambah, ubah nama/ikon, sembunyikan; hapus hanya jika belum dipakai |
-| Pengaturan | Ubah nama, ekspor CSV, keluar |
+| Lainnya (HP) | Kartu profil, menu Dompet/Kategori/Pengaturan, tombol Keluar |
+| Pengaturan | Ubah nama, ganti atau buat password, ekspor CSV, keluar |
 
 Aturan penting:
 - Transfer memindahkan saldo antar dompet dan **tidak** dihitung sebagai pemasukan/pengeluaran.

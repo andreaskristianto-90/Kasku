@@ -1,5 +1,5 @@
 // Lapisan data: satu API yang sama untuk Supabase dan Mode Demo (localStorage).
-import { supabase, modeDemo } from './supabase.js'
+import { supabase, modeDemo, supabaseUrl, supabaseKey } from './supabase.js'
 import { KATEGORI_BAWAAN } from './kategoriBawaan.js'
 
 export { modeDemo }
@@ -42,7 +42,16 @@ function ubahSesiDemo(sesi) {
 // ---------------------------------------------------------------------------
 function keUser(u) {
   if (!u) return null
-  return { id: u.id, email: u.email, nama: u.user_metadata?.nama || u.nama || '' }
+  const meta = u.user_metadata || {}
+  // Metode login yang terhubung ke akun, mis. ['email'], ['google'], atau keduanya.
+  const metode = u.app_metadata?.providers || (u.id === 'demo' ? ['email'] : [])
+  return {
+    id: u.id,
+    email: u.email,
+    nama: meta.nama || meta.full_name || meta.name || u.nama || '',
+    metode,
+    punyaPassword: metode.includes('email'),
+  }
 }
 
 function pesanError(error) {
@@ -53,6 +62,9 @@ function pesanError(error) {
   if (/Password should be at least/i.test(m)) return 'Password minimal 6 karakter.'
   if (/rate limit/i.test(m)) return 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.'
   if (/Failed to fetch/i.test(m)) return 'Tidak bisa terhubung ke server. Periksa koneksi internet.'
+  if (/different from the old password|same_password/i.test(m)) return 'Password baru harus berbeda dari password lama.'
+  if (/provider is not enabled|Unsupported provider/i.test(m)) return 'Login Google belum diaktifkan.'
+  if (/reauthentication|nonce/i.test(m)) return 'Demi keamanan, keluar lalu masuk lagi sebelum mengganti password.'
   return m
 }
 
@@ -118,6 +130,29 @@ export async function keluar() {
   await jalankan(supabase.auth.signOut())
 }
 
+// Login Google: browser diarahkan ke Google, lalu kembali ke Kasku dengan sesi aktif.
+export async function masukGoogle() {
+  if (modeDemo) throw new Error('Login Google tidak tersedia di Mode Demo.')
+  await jalankan(
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin, queryParams: { prompt: 'select_account' } },
+    }),
+  )
+}
+
+// Cek apakah provider Google sudah diaktifkan di Supabase (Authentication → Providers).
+export async function loginGoogleAktif() {
+  if (modeDemo) return false
+  try {
+    const res = await fetch(`${supabaseUrl}/auth/v1/settings`, { headers: { apikey: supabaseKey } })
+    const json = await res.json()
+    return Boolean(json?.external?.google)
+  } catch {
+    return false
+  }
+}
+
 export async function kirimResetPassword(email) {
   if (modeDemo) return
   await jalankan(
@@ -125,9 +160,24 @@ export async function kirimResetPassword(email) {
   )
 }
 
+// Dipakai dari link reset password (user belum tahu password lamanya).
 export async function gantiPassword(password) {
   if (modeDemo) return
   await jalankan(supabase.auth.updateUser({ password }))
+}
+
+// Dari Pengaturan. Jika akun sudah punya password, password lama dicek dulu.
+// Akun Google tanpa password bisa membuat password baru, agar bisa juga masuk dengan email.
+export async function aturPassword({ user, passwordLama, passwordBaru }) {
+  if (modeDemo) throw new Error('Mengatur password tidak tersedia di Mode Demo.')
+  if (user.punyaPassword) {
+    const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: passwordLama })
+    if (error) throw new Error(/Invalid login credentials/i.test(error.message) ? 'Password saat ini salah.' : pesanError(error))
+  }
+  const data = await jalankan(supabase.auth.updateUser({ password: passwordBaru }))
+  // Setelah password dibuat, akun Google juga punya metode 'email'.
+  const u = keUser(data.user)
+  return { ...u, metode: [...new Set([...u.metode, 'email'])], punyaPassword: true }
 }
 
 export async function ubahNama(nama) {
