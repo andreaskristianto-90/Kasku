@@ -43,7 +43,7 @@ export default function FormTransaksi({ id, query }) {
 
   if (id && !asal) {
     return (
-      <main className="halaman sempit">
+      <main className="halaman">
         <Header judul="Transaksi" tombolKembali />
         <Kosong ikon="🔍" judul="Transaksi tidak ditemukan">
           <a className="tombol" href="#/riwayat">Ke Riwayat</a>
@@ -148,7 +148,7 @@ function IsiForm({ awal, ubah, judul }) {
   }
 
   return (
-    <main className="halaman sempit">
+    <main className="halaman">
       <Header
         judul={judul}
         tombolKembali
@@ -160,7 +160,7 @@ function IsiForm({ awal, ubah, judul }) {
       />
 
       <form
-        className="kartu form"
+        className="kartu form form-transaksi"
         onSubmit={(e) => {
           e.preventDefault()
           simpan(false)

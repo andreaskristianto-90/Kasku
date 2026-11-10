@@ -10,7 +10,7 @@ import Ikon from '../components/Ikon.jsx'
 export function Lainnya() {
   const { dompet, kategori } = useData()
   return (
-    <main className="halaman sedang">
+    <main className="halaman">
       <Header judul="Lainnya" />
       <nav className="kartu daftar">
         <a className="item-transaksi" href={buatHref('/dompet')}>
@@ -73,32 +73,42 @@ export function Pengaturan({ user, onUserBerubah }) {
   }
 
   return (
-    <main className="halaman sedang">
+    <main className="halaman">
       <Header judul="Pengaturan" sub="Profil, data, dan akun" tombolKembali="hp" />
-
-      <form className="kartu form" onSubmit={simpanNama}>
-        <h2>Profil</h2>
-        <label className="field">
-          <span>Nama tampilan</span>
-          <input value={nama} onChange={(e) => setNama(e.target.value)} maxLength={40} />
-        </label>
-        <p className="teks-kecil teks-redup">Email: {user.email}</p>
-        <button className="tombol" disabled={proses || nama.trim() === (user.nama || '')}>Simpan nama</button>
-      </form>
-
-      <section className="kartu form">
-        <h2>Data</h2>
-        <p className="teks-kecil teks-redup">Unduh semua transaksi ({data.transaksi.length}) sebagai file CSV yang bisa dibuka di Excel atau Google Sheets.</p>
-        <button className="tombol" onClick={ekspor} disabled={data.transaksi.length === 0}>Ekspor CSV</button>
-      </section>
 
       {api.modeDemo && (
         <div className="banner-demo">
-          <strong>Mode Demo.</strong> Data tersimpan di browser ini saja. Sambungkan Supabase (lihat README) agar data aman dan bisa dibuka dari perangkat lain.
+          <strong>Mode Demo.</strong> Data hanya tersimpan di perangkat ini. Jika data browser dihapus atau kamu berganti perangkat, catatanmu tidak ikut terbawa.
         </div>
       )}
 
-      <button className="tombol bahaya penuh" onClick={keluar}>Keluar</button>
+      <div className="grid-dua">
+        <form className="kartu form" onSubmit={simpanNama}>
+          <h2>Profil</h2>
+          <label className="field">
+            <span>Nama tampilan</span>
+            <input value={nama} onChange={(e) => setNama(e.target.value)} maxLength={40} />
+          </label>
+          <p className="teks-kecil teks-redup">Email: {user.email}</p>
+          <button className="tombol" disabled={proses || nama.trim() === (user.nama || '')}>Simpan nama</button>
+        </form>
+
+        <section className="kartu form">
+          <h2>Data</h2>
+          <p className="teks-kecil teks-redup">Unduh semua transaksi ({data.transaksi.length}) sebagai file CSV yang bisa dibuka di Excel atau Google Sheets.</p>
+          <button className="tombol" onClick={ekspor} disabled={data.transaksi.length === 0}>
+            <Ikon nama="unduh" ukuran={18} /> Ekspor CSV
+          </button>
+        </section>
+      </div>
+
+      <section className="kartu baris-akun">
+        <div>
+          <h2>Akun</h2>
+          <p className="teks-kecil teks-redup">Keluar dari Kasku di perangkat ini.</p>
+        </div>
+        <button className="tombol bahaya" onClick={keluar}><Ikon nama="keluar" ukuran={18} /> Keluar</button>
+      </section>
     </main>
   )
 }

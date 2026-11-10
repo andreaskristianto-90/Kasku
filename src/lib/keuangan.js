@@ -132,14 +132,23 @@ export function totalPerKategori(transaksi, bulan, tipe = 'keluar') {
 
 // ---------- Riwayat ----------
 // filter: { bulan, tipe, kategoriId, dompetId, cari }
-export function filterTransaksi(transaksi, f = {}) {
+// nama (opsional): { kategoriById, dompetById } agar kata kunci juga mencocokkan nama kategori & dompet.
+export function filterTransaksi(transaksi, f = {}, nama = {}) {
   const cari = f.cari?.trim().toLowerCase()
+  const teksCari = (t) =>
+    [
+      t.catatan,
+      nama.kategoriById?.get(t.kategori_id)?.nama,
+      nama.dompetById?.get(t.dompet_id)?.nama,
+      nama.dompetById?.get(t.dompet_tujuan_id)?.nama,
+      t.tipe === 'transfer' ? 'transfer' : '',
+    ].join(' ').toLowerCase()
   return transaksi.filter((t) => {
     if (f.bulan && !t.tanggal.startsWith(f.bulan)) return false
     if (f.tipe && t.tipe !== f.tipe) return false
     if (f.kategoriId && t.kategori_id !== f.kategoriId) return false
     if (f.dompetId && t.dompet_id !== f.dompetId && t.dompet_tujuan_id !== f.dompetId) return false
-    if (cari && !(t.catatan || '').toLowerCase().includes(cari)) return false
+    if (cari && !teksCari(t).includes(cari)) return false
     return true
   })
 }

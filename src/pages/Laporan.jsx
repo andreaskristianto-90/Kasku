@@ -46,7 +46,7 @@ export default function Laporan({ query }) {
   const insight = buatInsight(transaksi, bulan, kategoriById)
 
   return (
-    <main className="halaman lebar">
+    <main className="halaman">
       <Header
         judul="Laporan"
         sub="Ringkasan keuanganmu per bulan"
@@ -70,7 +70,7 @@ export default function Laporan({ query }) {
           <div className="kartu-kepala">
             <div>
               <h2 id="judul-arus">Arus Kas</h2>
-              <p className="teks-kecil teks-redup">Pemasukan vs pengeluaran 6 bulan terakhir · ketuk bulan untuk memilih</p>
+              <p className="teks-kecil teks-redup">Pemasukan vs pengeluaran 6 bulan terakhir · pilih bulan untuk melihat rinciannya</p>
             </div>
             <div className="segmen kecil" role="tablist" aria-label="Seri yang ditampilkan">
               {PILIHAN_SERI.map((p) => (

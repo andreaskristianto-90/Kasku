@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { formatRingkas, formatRupiah, labelBulan, labelBulanPendek } from '../lib/keuangan.js'
 
-const TINGGI = 260
 const KIRI = 52 // ruang label sumbu Y
 const BAWAH = 28 // ruang label bulan
 const ATAS = 12
@@ -22,7 +21,7 @@ function jalurBatang(x, y, w, h) {
   return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`
 }
 
-export default function GrafikArusKas({ data, tampil = 'keduanya', bulanAktif, onPilihBulan }) {
+export default function GrafikArusKas({ data, tampil = 'keduanya', bulanAktif, onPilihBulan, tinggi: TINGGI = 260 }) {
   const wadah = useRef()
   const [lebar, setLebar] = useState(600)
   const [sorot, setSorot] = useState(null)

@@ -64,6 +64,9 @@ test('filterTransaksi', () => {
   assert.equal(filterTransaksi(T, { bulan: '2026-11' }).length, 4)
   assert.equal(filterTransaksi(T, { dompetId: 'tunai' }).length, 3) // termasuk transfer masuk
   assert.equal(filterTransaksi(T, { cari: 'bakso' }).length, 1)
+  const nama = { kategoriById: new Map([['makan', { nama: 'Makan' }]]), dompetById: new Map([['bca', { nama: 'BCA' }]]) }
+  assert.equal(filterTransaksi(T, { cari: 'makan' }, nama).length, 2) // nama kategori
+  assert.equal(filterTransaksi(T, { cari: 'bca' }, nama).length, 3) // nama dompet, termasuk transfer
 })
 
 test('kelompokkanPerTanggal', () => {

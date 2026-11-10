@@ -1,5 +1,6 @@
 // Tata letak aplikasi: sidebar (desktop), topbar dengan pencarian, navigasi bawah (HP).
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
+import { PencarianProvider, usePencarian } from '../lib/pencarian.jsx'
 import * as api from '../lib/api.js'
 import { buatHref, pergi } from '../lib/rute.js'
 import Ikon from './Ikon.jsx'
@@ -54,7 +55,7 @@ function Sidebar({ path, user }) {
         {api.modeDemo && (
           <div className="kartu-demo">
             <strong>Mode Demo</strong>
-            <span>Data hanya tersimpan di browser ini. Sambungkan Supabase agar aman.</span>
+            <span>Data hanya tersimpan di perangkat ini.</span>
           </div>
         )}
         <div className="profil">
@@ -72,8 +73,18 @@ function Sidebar({ path, user }) {
   )
 }
 
-function Topbar() {
-  const [cari, setCari] = useState('')
+// Satu-satunya kotak cari. Di halaman Transaksi daftar langsung tersaring saat mengetik;
+// dari halaman lain, Enter membuka halaman Transaksi dengan kata kunci tersebut.
+function Topbar({ path }) {
+  const { cari, setCari } = usePencarian()
+  const pathSebelum = useRef(path)
+
+  // Kosongkan kata kunci saat meninggalkan halaman Transaksi.
+  useEffect(() => {
+    if (pathSebelum.current === '/riwayat' && path !== '/riwayat') setCari('')
+    pathSebelum.current = path
+  }, [path, setCari])
+
   return (
     <div className="topbar">
       <div className="topbar-logo"><Logo /></div>
@@ -82,12 +93,18 @@ function Topbar() {
         role="search"
         onSubmit={(e) => {
           e.preventDefault()
-          pergi('/riwayat', { cari: cari.trim() })
-          setCari('')
+          e.currentTarget.querySelector('input')?.blur()
+          if (path !== '/riwayat') pergi('/riwayat')
         }}
       >
         <Ikon nama="cari" ukuran={18} />
-        <input type="search" placeholder="Cari transaksi…" value={cari} onChange={(e) => setCari(e.target.value)} aria-label="Cari transaksi" />
+        <input
+          type="search"
+          placeholder="Cari catatan, kategori, atau dompet…"
+          value={cari}
+          onChange={(e) => setCari(e.target.value)}
+          aria-label="Cari transaksi"
+        />
       </form>
     </div>
   )
@@ -98,7 +115,7 @@ const NAV_HP = [
   { path: '/riwayat', label: 'Transaksi', ikon: 'transaksi' },
   null,
   { path: '/laporan', label: 'Laporan', ikon: 'laporan' },
-  { path: '/lainnya', label: 'Lainnya', ikon: 'lainnya', juga: ['/dompet', '/kategori', '/pengaturan'] },
+  { path: '/lainnya', label: 'Lainnya', ikon: 'menu', juga: ['/dompet', '/kategori', '/pengaturan'] },
 ]
 
 function NavBawah({ path }) {
@@ -127,14 +144,16 @@ function NavBawah({ path }) {
 
 export default function Kerangka({ path, user, navHp = true, children }) {
   return (
-    <div className={`app ${navHp ? 'dengan-nav' : ''}`}>
-      <Sidebar path={path} user={user} />
-      <div className="konten">
-        <Topbar />
-        {api.modeDemo && <div className="pita-demo">Mode Demo · data hanya di browser ini</div>}
-        {children}
+    <PencarianProvider>
+      <div className={`app ${navHp ? 'dengan-nav' : ''}`}>
+        <Sidebar path={path} user={user} />
+        <div className="konten">
+          <Topbar path={path} />
+          {api.modeDemo && <div className="pita-demo">Mode Demo · data hanya tersimpan di perangkat ini</div>}
+          {children}
+        </div>
+        {navHp && <NavBawah path={path} />}
       </div>
-      {navHp && <NavBawah path={path} />}
-    </div>
+    </PencarianProvider>
   )
 }

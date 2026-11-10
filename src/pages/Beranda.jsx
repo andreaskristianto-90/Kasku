@@ -17,7 +17,7 @@ export default function Beranda({ user }) {
   const terakhir = transaksi.slice(0, 6)
 
   return (
-    <main className="halaman lebar">
+    <main className="halaman">
       <Header
         judul={`Halo${user.nama ? `, ${user.nama}` : ''} 👋`}
         sub={`Ringkasan keuanganmu · ${labelBulan(bulan)}`}
@@ -36,7 +36,7 @@ export default function Beranda({ user }) {
           <div className="kartu-kepala">
             <div>
               <h2 id="judul-arus">Arus Kas</h2>
-              <p className="teks-kecil teks-redup">6 bulan terakhir · ketuk bulan untuk membuka laporannya</p>
+              <p className="teks-kecil teks-redup">6 bulan terakhir · pilih bulan untuk melihat laporannya</p>
             </div>
             <div className="legenda-angka">
               <span><i className="titik titik-masuk" /> Pemasukan</span>

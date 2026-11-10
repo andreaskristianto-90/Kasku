@@ -19,7 +19,7 @@ export default function Dompet() {
   )
 
   return (
-    <main className="halaman sedang">
+    <main className="halaman">
       <Header
         judul="Dompet"
         sub="Saldo setiap rekening, e-wallet, dan uang tunai"

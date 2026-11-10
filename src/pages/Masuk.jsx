@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import * as api from '../lib/api.js'
+import PratinjauApp from '../components/PratinjauApp.jsx'
 
 // mode: 'masuk' | 'daftar' | 'lupa'
 export default function Masuk() {
@@ -50,7 +51,8 @@ export default function Masuk() {
   const TOMBOL = { masuk: 'Masuk', daftar: 'Daftar', lupa: 'Kirim link reset' }
 
   return (
-    <main className="halaman-auth">
+    <main className="halaman-auth auth-dua">
+      <div className="auth-kolom">
       <div className="merek">
         <div className="merek-logo" aria-hidden="true">Rp</div>
         <div>
@@ -58,11 +60,14 @@ export default function Masuk() {
           <div className="merek-slogan">Catat uang masuk & keluar, tanpa ribet.</div>
         </div>
       </div>
+      <p className="auth-manfaat">
+        Catat setiap pengeluaran dalam hitungan detik, lihat saldo semua dompetmu di satu tempat,
+        dan ketahui ke mana uangmu pergi setiap bulan.
+      </p>
 
       {api.modeDemo && (
         <div className="banner-demo">
-          <strong>Mode Demo.</strong> Supabase belum disambungkan, jadi data hanya tersimpan di browser ini.
-          Isi email & password apa saja untuk mencoba.
+          <strong>Mode Demo.</strong> Data hanya tersimpan di perangkat ini. Masuk dengan email dan password apa saja untuk mencoba.
         </div>
       )}
 
@@ -106,6 +111,8 @@ export default function Masuk() {
           )}
         </div>
       </form>
+      </div>
+      <PratinjauApp />
     </main>
   )
 }

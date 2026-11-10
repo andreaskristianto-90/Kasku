@@ -26,7 +26,7 @@ export default function Kategori() {
   )
 
   return (
-    <main className="halaman sedang">
+    <main className="halaman">
       <Header
         judul="Kategori"
         sub="Atur kategori pemasukan dan pengeluaran"
