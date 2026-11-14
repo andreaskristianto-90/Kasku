@@ -59,6 +59,27 @@ Buka https://kasku-app.pages.dev (muat ulang) → tombol Google muncul → pilih
 
 Tidak perlu mengubah kode atau Cloudflare: aplikasi membaca status provider langsung dari Supabase.
 
+## Email selamat datang (Resend)
+
+Saat akun **terkonfirmasi** (daftar email → klik link konfirmasi; daftar Google → langsung), user menerima email "Selamat datang di Kasku" lewat [Resend](https://resend.com).
+
+Cara kerjanya:
+1. Trigger `on_auth_user_terkonfirmasi` di tabel `auth.users` ([supabase/email-selamat-datang.sql](supabase/email-selamat-datang.sql)) memanggil Edge Function secara asinkron lewat `pg_net`. Pendaftaran tidak pernah gagal karena email.
+2. Edge Function [`kirim-email-selamat-datang`](supabase/functions/kirim-email-selamat-datang/index.ts) memeriksa user (harus ada, terkonfirmasi, dibuat ≤ 7 hari, belum pernah dikirimi), mengirim lewat Resend, lalu menandai `app_metadata.email_selamat_datang_terkirim` agar tidak terkirim dua kali.
+3. API key Resend hanya ada di server (Edge Function Secrets), tidak pernah di kode browser.
+
+Pengaturan (Supabase → Edge Functions → **Secrets**):
+
+| Secret | Wajib | Isi |
+|---|---|---|
+| `RESEND_API_KEY` | Ya | API key dari resend.com |
+| `EMAIL_FROM` | Tidak | Pengirim, mis. `Kasku <halo@domainmu.com>`. Bawaan: `Kasku <onboarding@resend.dev>` |
+| `APP_URL` | Tidak | Link tombol di email. Bawaan: `https://kasku-app.pages.dev` |
+
+Catatan Resend: pengirim bawaan `onboarding@resend.dev` hanya bisa mengirim ke email pemilik akun Resend. Agar email sampai ke semua user, verifikasi domain sendiri di Resend (Domains → Add domain, tambahkan record DNS), lalu isi `EMAIL_FROM` dengan alamat di domain itu.
+
+Memeriksa pengiriman: Supabase → Edge Functions → `kirim-email-selamat-datang` → **Logs**, atau dashboard Resend → **Emails**.
+
 ## Deploy ke Cloudflare Pages
 
 - Build command: `npm run build`
