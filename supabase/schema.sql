@@ -85,3 +85,15 @@ drop policy if exists "transaksi milik sendiri" on public.transaksi;
 create policy "transaksi milik sendiri" on public.transaksi
   for all to authenticated
   using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+
+-- ============ PENGERASAN ============
+-- Fungsi bawaan project `rls_auto_enable()` (event trigger yang otomatis menyalakan RLS di tabel baru)
+-- tidak perlu bisa dipanggil lewat API. Event trigger tetap berjalan karena dijalankan oleh sistem.
+-- Sudah dijalankan sebagai migration `kasku_cabut_eksekusi_rls_auto_enable`.
+do $$
+begin
+  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+             where n.nspname = 'public' and p.proname = 'rls_auto_enable') then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;
