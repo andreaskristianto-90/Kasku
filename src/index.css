@@ -480,3 +480,9 @@ input:focus, select:focus { border-color: var(--merek); outline: none; box-shado
 .tombol-google { gap: 10px; background: var(--permukaan); border-color: var(--garis-kuat); font-weight: 600; }
 .pemisah { display: flex; align-items: center; gap: 12px; color: var(--teks-2); font-size: 0.85rem; }
 .pemisah::before, .pemisah::after { content: ''; flex: 1; height: 1px; background: var(--garis); }
+
+/* ================= Akun demo bersama ================= */
+.kartu-coba-demo { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; background: var(--merek-lembut); border-color: var(--merek-garis); }
+.kartu-coba-demo > div { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.banner-akun-demo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 16px; background: var(--info-latar); color: var(--info-teks); font-size: 0.9rem; border-bottom: 1px solid var(--garis); }
+@media (min-width: 1024px) { .banner-akun-demo { padding: 10px 28px; } }

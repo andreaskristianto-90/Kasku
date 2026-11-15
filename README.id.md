@@ -2,7 +2,7 @@
 
 [English](README.md) · **Bahasa Indonesia**
 
-Aplikasi online: https://kasku-app.pages.dev
+Aplikasi online: https://kasku-app.pages.dev — klik **Coba akun demo** di halaman Masuk untuk mencoba tanpa daftar.
 
 Aplikasi web (mobile-first) untuk mencatat pemasukan, pengeluaran, dan transfer antar dompet.
 Dibangun dengan React + Vite, Supabase (database + login), siap di-deploy ke Cloudflare Pages.
@@ -83,6 +83,17 @@ Pengaturan (Supabase → Edge Functions → **Secrets**):
 Catatan Resend: pengirim bawaan `onboarding@resend.dev` hanya bisa mengirim ke email pemilik akun Resend. Agar email sampai ke semua user, verifikasi domain sendiri di Resend (Domains → Add domain, tambahkan record DNS), lalu isi `EMAIL_FROM` dengan alamat di domain itu.
 
 Memeriksa pengiriman: Supabase → Edge Functions → `kirim-email-selamat-datang` → **Logs**, atau dashboard Resend → **Emails**.
+
+## Akun demo bersama
+
+Pengunjung bisa mencoba Kasku tanpa mendaftar lewat tombol **Coba akun demo** di halaman Masuk. Kredensialnya ada di [`src/lib/demo.js`](src/lib/demo.js) dan memang sengaja publik.
+
+Karena akun ini dipakai bersama, [`supabase/akun-demo.sql`](supabase/akun-demo.sql) memasang:
+- **Trigger pengunci** `lindungi_akun_demo` di `auth.users`: password, email, dan nama akun demo tidak bisa diubah, termasuk lewat API langsung.
+- **`reset_akun_demo()`**: menghapus data akun demo lalu mengisi ulang 3 dompet, kategori bawaan, dan contoh transaksi sekitar 3 bulan terakhir, serta mengembalikan password dan nama.
+- **Jadwal `pg_cron`** `reset-akun-demo`: reset setiap hari pukul 17.00 UTC (00.00 WIB).
+
+Di aplikasi, banner mengingatkan bahwa data akun demo dipakai bersama dan direset setiap hari, serta pengaturan nama dan password dinonaktifkan.
 
 ## Deploy ke Cloudflare Pages
 

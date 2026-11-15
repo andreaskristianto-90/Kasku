@@ -1,6 +1,7 @@
 // Lapisan data: satu API yang sama untuk Supabase dan Mode Demo (localStorage).
 import { supabase, modeDemo, supabaseUrl, supabaseKey } from './supabase.js'
 import { KATEGORI_BAWAAN } from './kategoriBawaan.js'
+import { adalahAkunDemo } from './demo.js'
 
 export { modeDemo }
 
@@ -51,6 +52,7 @@ function keUser(u) {
     nama: meta.nama || meta.full_name || meta.name || u.nama || '',
     metode,
     punyaPassword: metode.includes('email'),
+    akunDemo: !modeDemo && adalahAkunDemo(u),
   }
 }
 
@@ -170,6 +172,7 @@ export async function gantiPassword(password) {
 // Akun Google tanpa password bisa membuat password baru, agar bisa juga masuk dengan email.
 export async function aturPassword({ user, passwordLama, passwordBaru }) {
   if (modeDemo) throw new Error('Mengatur password tidak tersedia di Mode Demo.')
+  if (user.akunDemo) throw new Error('Password akun demo tidak bisa diubah.')
   if (user.punyaPassword) {
     const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: passwordLama })
     if (error) throw new Error(/Invalid login credentials/i.test(error.message) ? 'Password saat ini salah.' : pesanError(error))
@@ -181,6 +184,7 @@ export async function aturPassword({ user, passwordLama, passwordBaru }) {
 }
 
 export async function ubahNama(nama) {
+  if ((await ambilUser())?.akunDemo) throw new Error('Nama akun demo tidak bisa diubah.')
   if (modeDemo) {
     const isi = bacaDemo()
     isi.sesi = { ...isi.sesi, nama }

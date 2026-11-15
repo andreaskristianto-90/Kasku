@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react'
 import * as api from '../lib/api.js'
 import PratinjauApp from '../components/PratinjauApp.jsx'
+import { AKUN_DEMO, JAM_RESET_DEMO } from '../lib/demo.js'
 
 // mode: 'masuk' | 'daftar' | 'lupa'
 export default function Masuk() {
-  const [mode, setMode] = useState('masuk')
+  // Tombol "Buat akun sendiri" dari banner akun demo membuka langsung mode daftar.
+  const [mode, setMode] = useState(() => {
+    try {
+      const m = sessionStorage.getItem('kasku-mode-auth')
+      sessionStorage.removeItem('kasku-mode-auth')
+      return m === 'daftar' ? 'daftar' : 'masuk'
+    } catch {
+      return 'masuk'
+    }
+  })
+  const [prosesDemo, setProsesDemo] = useState(false)
   const [nama, setNama] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -55,6 +66,18 @@ export default function Masuk() {
     }
   }
 
+  async function cobaDemo() {
+    setError('')
+    setInfo('')
+    setProsesDemo(true)
+    try {
+      await api.masuk(AKUN_DEMO)
+    } catch (err) {
+      setError(`Akun demo sedang tidak bisa dipakai: ${err.message}`)
+      setProsesDemo(false)
+    }
+  }
+
   async function lewatGoogle() {
     setError('')
     setProsesGoogle(true)
@@ -87,6 +110,18 @@ export default function Masuk() {
       {api.modeDemo && (
         <div className="banner-demo">
           <strong>Mode Demo.</strong> Data hanya tersimpan di perangkat ini. Masuk dengan email dan password apa saja untuk mencoba.
+        </div>
+      )}
+
+      {!api.modeDemo && mode !== 'lupa' && (
+        <div className="kartu kartu-coba-demo">
+          <div>
+            <strong>Mau lihat dulu?</strong>
+            <p className="teks-kecil teks-redup">Masuk ke akun demo berisi contoh data, tanpa daftar. Akun ini dipakai bersama dan direset setiap hari pukul {JAM_RESET_DEMO}.</p>
+          </div>
+          <button type="button" className="tombol utama" onClick={cobaDemo} disabled={prosesDemo}>
+            {prosesDemo ? 'Membuka demo…' : 'Coba akun demo'}
+          </button>
         </div>
       )}
 

@@ -4,6 +4,7 @@ import { PencarianProvider, usePencarian } from '../lib/pencarian.jsx'
 import * as api from '../lib/api.js'
 import { buatHref, pergi } from '../lib/rute.js'
 import Ikon from './Ikon.jsx'
+import { JAM_RESET_DEMO } from '../lib/demo.js'
 
 const MENU_UTAMA = [
   { path: '/', label: 'Beranda', ikon: 'beranda' },
@@ -142,6 +143,24 @@ function NavBawah({ path }) {
   )
 }
 
+// Muncul selama memakai akun demo bersama.
+function BannerAkunDemo() {
+  async function buatAkunSendiri() {
+    try {
+      sessionStorage.setItem('kasku-mode-auth', 'daftar')
+    } catch { /* tidak penting */ }
+    await api.keluar()
+  }
+  return (
+    <div className="banner-akun-demo" role="note">
+      <span>
+        <strong>Akun demo bersama.</strong> Semua pengunjung melihat data yang sama, dan data direset setiap hari pukul {JAM_RESET_DEMO}.
+      </span>
+      <button className="tombol kecil utama" onClick={buatAkunSendiri}>Buat akun sendiri</button>
+    </div>
+  )
+}
+
 export default function Kerangka({ path, user, navHp = true, children }) {
   return (
     <PencarianProvider>
@@ -150,6 +169,7 @@ export default function Kerangka({ path, user, navHp = true, children }) {
         <div className="konten">
           <Topbar path={path} />
           {api.modeDemo && <div className="pita-demo">Mode Demo · data hanya tersimpan di perangkat ini</div>}
+          {user.akunDemo && <BannerAkunDemo />}
           {children}
         </div>
         {navHp && <NavBawah path={path} />}

@@ -4,7 +4,7 @@
 
 Kasku is a mobile-first web app for recording income, expenses, and transfers between wallets, then seeing where your money goes each month. The interface is in Indonesian and all amounts are in Rupiah (IDR).
 
-**Live app:** https://kasku-app.pages.dev
+**Live app:** https://kasku-app.pages.dev — click **Coba akun demo** on the sign-in page to try it without registering.
 
 Built with React + Vite, backed by Supabase (Postgres, Auth, Edge Functions), and deployed on Cloudflare Pages.
 
@@ -152,6 +152,17 @@ supabase functions deploy kirim-email-selamat-datang --no-verify-jwt
 
 Delivery can be checked in Supabase → Edge Functions → `kirim-email-selamat-datang` → **Logs**, or in the Resend dashboard → **Emails**.
 
+## Shared demo account
+
+Visitors can try Kasku without signing up via the **Coba akun demo** ("Try the demo account") button on the sign-in page. The credentials live in [`src/lib/demo.js`](src/lib/demo.js) and are intentionally public.
+
+Because everyone shares this account, [`supabase/akun-demo.sql`](supabase/akun-demo.sql) adds:
+- **A lock trigger** (`lindungi_akun_demo`) on `auth.users`, so the demo account's password, email, and name cannot be changed, even through direct API calls.
+- **`reset_akun_demo()`**, which wipes the demo data and reseeds 3 wallets, the default categories, and about 3 months of sample transactions relative to today, then restores the password and name.
+- **A `pg_cron` job** (`reset-akun-demo`) that runs the reset daily at 17:00 UTC (00:00 WIB).
+
+In the app, a banner reminds demo users that the data is shared and reset daily, and the name and password settings are disabled.
+
 ## Deployment (Cloudflare Pages)
 
 Connect the GitHub repository in Cloudflare → Workers & Pages → Create → Pages → *Connect to Git*, then use:
@@ -194,6 +205,7 @@ Every push to `main` triggers a new build. Routing uses `#/…` URLs, so no redi
 └── supabase/
     ├── schema.sql              # tables, RLS, indexes, hardening
     ├── email-selamat-datang.sql
+    ├── akun-demo.sql           # shared demo account: lock, seed data, daily reset
     └── functions/kirim-email-selamat-datang/index.ts
 ```
 

@@ -107,10 +107,11 @@ export function Pengaturan({ user, onUserBerubah }) {
           <h2>Profil</h2>
           <label className="field">
             <span>Nama tampilan</span>
-            <input value={nama} onChange={(e) => setNama(e.target.value)} maxLength={40} />
+            <input value={nama} onChange={(e) => setNama(e.target.value)} maxLength={40} disabled={user.akunDemo} />
           </label>
           <p className="teks-kecil teks-redup">Email: {user.email} · Masuk dengan {labelMetode(user)}</p>
-          <button className="tombol" disabled={proses || nama.trim() === (user.nama || '')}>Simpan nama</button>
+          {user.akunDemo && <p className="teks-kecil teks-redup">Nama akun demo tidak bisa diubah.</p>}
+          <button className="tombol" disabled={proses || user.akunDemo || nama.trim() === (user.nama || '')}>Simpan nama</button>
         </form>
 
         <section className="kartu form">
@@ -122,7 +123,14 @@ export function Pengaturan({ user, onUserBerubah }) {
         </section>
       </div>
 
-      <KartuPassword user={user} onUserBerubah={onUserBerubah} />
+      {user.akunDemo ? (
+        <section className="kartu form">
+          <h2>Password</h2>
+          <p className="teks-kecil teks-redup">Password akun demo bersama tidak bisa diubah. Buat akun sendiri untuk mengatur password dan menyimpan data pribadimu.</p>
+        </section>
+      ) : (
+        <KartuPassword user={user} onUserBerubah={onUserBerubah} />
+      )}
 
       <section className="kartu baris-akun">
         <div>
