@@ -1,125 +1,202 @@
-# Kasku — pencatat keuangan pribadi (fase 1)
+# Kasku — personal finance tracker
 
-Aplikasi web (mobile-first) untuk mencatat pemasukan, pengeluaran, dan transfer antar dompet.
-Dibangun dengan React + Vite, Supabase (database + login), siap di-deploy ke Cloudflare Pages.
+**English** · [Bahasa Indonesia](README.id.md)
 
-## Menjalankan
+Kasku is a mobile-first web app for recording income, expenses, and transfers between wallets, then seeing where your money goes each month. The interface is in Indonesian and all amounts are in Rupiah (IDR).
 
-Butuh Node.js 20.19 atau lebih baru (`node -v`).
+**Live app:** https://kasku-app.pages.dev
+
+Built with React + Vite, backed by Supabase (Postgres, Auth, Edge Functions), and deployed on Cloudflare Pages.
+
+## Features
+
+| Page | What it does |
+|---|---|
+| Sign in / Sign up | Email + password, password reset by email, and Google sign-in (shown once the provider is enabled) |
+| Onboarding | Create the first wallet with its starting balance; default categories are created automatically |
+| Home (*Beranda*) | Stat cards (balance, income, expenses, net cash flow, each with % change vs last month), 6-month cash flow chart, wallets, recent transactions |
+| Record / edit transaction | Expense, income, or transfer; "save & add another"; duplicate; delete |
+| Transactions (*Transaksi*) | Monthly list grouped by day; filter by type, category, wallet; one search box in the top bar matches notes, category, and wallet names |
+| Reports (*Laporan*) | Stat cards + savings rate, 6-month cash flow chart, expense breakdown by category, largest expenses, and rule-based insights |
+| Wallets (*Dompet*) | Add, edit, archive; delete only when unused |
+| Categories (*Kategori*) | Add, rename, change icon, hide; delete only when unused |
+| More (*Lainnya*, mobile) | Profile card, links to wallets/categories/settings, sign out |
+| Settings (*Pengaturan*) | Display name, change password (or create one for Google accounts), CSV export, sign out |
+| Welcome email | Sent through Resend once a new account is confirmed |
+
+Business rules:
+- A transfer moves money between two wallets and is **not** counted as income or expense.
+- Wallet balance = starting balance + income − expenses ± transfers.
+- Amounts are whole Rupiah, from 1 up to 1 trillion.
+
+## Architecture
+
+```
+Developer ──git push──▶ GitHub ──auto build──▶ Cloudflare Pages ──static files──▶ Browser
+                                                                                   │
+                                     ┌─────────────────────────────────────────────┤
+                                     ▼                                             ▼
+                              Supabase Auth                               Supabase REST API
+                       (email, Google OAuth, tokens)                              │
+                                     │                                             ▼
+                     on confirm: trigger ──pg_net──▶ Edge Function        Postgres + RLS
+                                                      │                 (dompet, kategori,
+                                                      ▼                     transaksi)
+                                                   Resend
+```
+
+- **All app logic runs in the browser.** Cloudflare only serves the built files; it stores no data.
+- **The browser talks to Supabase directly** using the publishable key plus the signed-in user's token. Row Level Security makes sure each user can only read and write their own rows.
+- **Server-only work** (sending the welcome email) runs in a Supabase Edge Function, so the Resend API key never reaches the browser.
+
+Inside the React app the code is layered:
+
+| Layer | Files | Role |
+|---|---|---|
+| Entry & routing | `src/App.jsx`, `src/lib/rute.js` | Checks the session, picks the page from the `#/…` hash URL |
+| Pages & components | `src/pages/`, `src/components/` | UI; `Kerangka.jsx` is the shell (sidebar, top bar, mobile nav) |
+| State | `src/lib/DataContext.jsx` | Loads all data once, keeps it in memory, exposes save/delete actions |
+| Data access | `src/lib/api.js`, `src/lib/supabase.js` | Single gateway to Supabase, or to `localStorage` in Demo Mode |
+| Pure logic | `src/lib/keuangan.js`, `src/lib/insight.js` | Balances, monthly summaries, reports, validation, CSV, insights; covered by tests |
+
+## Getting started
+
+Requires **Node.js 20.19+**.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Buka alamat yang muncul (`http://localhost:5180`).
+Open http://localhost:5180 (the dev server is pinned to port 5180).
 
-Tanpa konfigurasi Supabase, aplikasi berjalan dalam **Mode Demo**: login dengan email/password apa saja, dan data hanya tersimpan di browser itu (localStorage). Cocok untuk mencoba tampilan.
+**Demo Mode:** if no Supabase variables are set, the app runs entirely in the browser. You can sign in with any email and password, and data is stored only in that browser's `localStorage`. Handy for trying the UI without a backend.
 
-## Menyambungkan Supabase
+### Scripts
 
-1. Buat project di [supabase.com](https://supabase.com).
-2. Buka **SQL Editor → New query**, tempel isi [`supabase/schema.sql`](supabase/schema.sql), lalu **Run**. Ini membuat tabel `dompet`, `kategori`, `transaksi` beserta Row Level Security (setiap user hanya bisa melihat datanya sendiri).
-3. Buka **Project Settings → API**, salin *Project URL* dan *anon public key*.
-4. Salin `.env.example` menjadi `.env.local`, lalu isi:
-   ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJ...
-   ```
-5. Di **Authentication → URL Configuration**, isi *Site URL* dengan alamat aplikasi (mis. `http://localhost:5180` saat pengembangan, lalu alamat Cloudflare Pages saat produksi). Link konfirmasi email dan reset password akan kembali ke alamat ini.
-6. Jalankan ulang `npm run dev`.
+| Command | Description |
+|---|---|
+| `npm run dev` | Start the dev server on port 5180 |
+| `npm run build` | Production build into `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm test` | Run unit tests for the finance logic (Node's built-in test runner) |
 
-Secara bawaan Supabase mewajibkan konfirmasi email saat daftar. Untuk mencoba lebih cepat, matikan di **Authentication → Providers → Email → Confirm email**.
+### Environment variables
 
-## Mengaktifkan login Google
+Copy `.env.example` to `.env.local` (git-ignored) and fill in:
 
-Tombol **Lanjutkan dengan Google** di halaman Masuk otomatis muncul setelah provider Google aktif di Supabase. Langkahnya:
-
-**A. Google Cloud Console — buat OAuth client**
-1. Buka https://console.cloud.google.com → pilih/buat project (mis. `Kasku`).
-2. Menu **Google Auth Platform** (atau *APIs & Services → OAuth consent screen*) → **Get started**:
-   - App name: `Kasku`, User support email: email kamu
-   - Audience: **External**
-   - Contact information: email kamu → setujui kebijakan → **Create**
-3. **Audience** → bagian *Test users* → **Add users** → masukkan email Google yang akan dipakai mencoba. Selama status aplikasi *Testing*, hanya akun di daftar ini yang bisa masuk. Untuk dibuka ke semua orang, tekan **Publish app** (scope yang dipakai hanya email & profil dasar).
-4. **Clients** → **Create client**:
-   - Application type: **Web application**, Name: `Kasku Web`
-   - Authorized JavaScript origins: `https://kasku-app.pages.dev` dan `http://localhost:5180`
-   - Authorized redirect URIs: `https://fqpayovldqxjllxehvua.supabase.co/auth/v1/callback`
-   - **Create** → salin **Client ID** dan **Client secret** (jangan dibagikan; secret hanya ditempel di Supabase).
-
-**B. Supabase — aktifkan provider Google**
-1. Buka https://supabase.com/dashboard/project/fqpayovldqxjllxehvua/auth/providers
-2. Klik **Google** → aktifkan **Enable Sign in with Google**.
-3. Tempel **Client ID** dan **Client Secret** dari langkah A.4 → **Save**.
-4. Pastikan *Authentication → URL Configuration* berisi Site URL `https://kasku-app.pages.dev` dan Redirect URLs `https://kasku-app.pages.dev/**` serta `http://localhost:5180/**` (sudah diatur).
-
-**C. Coba**
-Buka https://kasku-app.pages.dev (muat ulang) → tombol Google muncul → pilih akun → kembali ke Kasku dan langsung masuk. Akun Google dengan email yang sama dengan akun email yang sudah ada akan digabung otomatis oleh Supabase.
-
-Tidak perlu mengubah kode atau Cloudflare: aplikasi membaca status provider langsung dari Supabase.
-
-## Email selamat datang (Resend)
-
-Saat akun **terkonfirmasi** (daftar email → klik link konfirmasi; daftar Google → langsung), user menerima email "Selamat datang di Kasku" lewat [Resend](https://resend.com).
-
-Cara kerjanya:
-1. Trigger `on_auth_user_terkonfirmasi` di tabel `auth.users` ([supabase/email-selamat-datang.sql](supabase/email-selamat-datang.sql)) memanggil Edge Function secara asinkron lewat `pg_net`. Pendaftaran tidak pernah gagal karena email.
-2. Edge Function [`kirim-email-selamat-datang`](supabase/functions/kirim-email-selamat-datang/index.ts) memeriksa user (harus ada, terkonfirmasi, dibuat ≤ 7 hari, belum pernah dikirimi), mengirim lewat Resend, lalu menandai `app_metadata.email_selamat_datang_terkirim` agar tidak terkirim dua kali.
-3. API key Resend hanya ada di server (Edge Function Secrets), tidak pernah di kode browser.
-
-Pengaturan (Supabase → Edge Functions → **Secrets**):
-
-| Secret | Wajib | Isi |
+| Variable | Example | Notes |
 |---|---|---|
-| `RESEND_API_KEY` | Ya | API key dari resend.com |
-| `EMAIL_FROM` | Tidak | Pengirim, mis. `Kasku <halo@domainmu.com>`. Bawaan: `Kasku <onboarding@resend.dev>` |
-| `APP_URL` | Tidak | Link tombol di email. Bawaan: `https://kasku-app.pages.dev` |
+| `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` | Supabase → Project Settings → API |
+| `VITE_SUPABASE_ANON_KEY` | `sb_publishable_…` | The **publishable** (anon) key. It is meant to be public; never put a secret or service-role key here |
 
-Catatan Resend: pengirim bawaan `onboarding@resend.dev` hanya bisa mengirim ke email pemilik akun Resend. Agar email sampai ke semua user, verifikasi domain sendiri di Resend (Domains → Add domain, tambahkan record DNS), lalu isi `EMAIL_FROM` dengan alamat di domain itu.
+Leave both empty to use Demo Mode.
 
-Memeriksa pengiriman: Supabase → Edge Functions → `kirim-email-selamat-datang` → **Logs**, atau dashboard Resend → **Emails**.
+## Supabase setup
 
-## Deploy ke Cloudflare Pages
+1. Create a project at [supabase.com](https://supabase.com).
+2. In **SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). It creates the `dompet` (wallets), `kategori` (categories), and `transaksi` (transactions) tables with:
+   - Row Level Security: signed-in users can only access rows where `user_id = auth.uid()`
+   - composite foreign keys, so a transaction can only reference the user's own wallets and categories
+   - CHECK constraints for amounts and transfer rules, plus indexes
+3. Copy the project URL and publishable key into `.env.local`, then restart `npm run dev`.
+4. In **Authentication → URL Configuration**, set:
+   - **Site URL:** your production URL (e.g. `https://kasku-app.pages.dev`)
+   - **Redirect URLs:** `https://kasku-app.pages.dev/**` and `http://localhost:5180/**`
 
-- Build command: `npm run build`
-- Output directory: `dist`
-- Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+   Confirmation and password-reset links redirect here.
+5. Recommended: keep **Confirm email** on (Authentication → Providers → Email) and enable **leaked password protection** where your plan allows it.
 
-## Fitur fase 1
+## Google sign-in
 
-| Halaman | Fungsi |
+The **Lanjutkan dengan Google** ("Continue with Google") button appears automatically once the Google provider is enabled in Supabase. No code change or redeploy is needed.
+
+**A. Google Cloud Console**
+1. Create or select a project at https://console.cloud.google.com.
+2. **Google Auth Platform → Get started**: app name, support email, audience **External**.
+3. **Audience → Test users**: add the Google accounts that may sign in while the app is in *Testing*, or click **Publish app** to open it to everyone (only basic email/profile scopes are used).
+4. **Clients → Create client** → *Web application*:
+   - Authorized JavaScript origins: `https://kasku-app.pages.dev`, `http://localhost:5180`
+   - Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+   - Copy the **Client ID** and **Client secret**.
+
+**B. Supabase**
+1. **Authentication → Providers → Google** → enable.
+2. Paste the Client ID and Client secret → **Save**.
+
+A Google account whose email matches an existing email account is linked to it automatically by Supabase.
+
+## Welcome email (Resend)
+
+When an account becomes **confirmed** (email sign-up after clicking the confirmation link, or a Google sign-up right away), the user receives a "Selamat datang di Kasku" (Welcome to Kasku) email via [Resend](https://resend.com).
+
+How it works:
+1. The trigger `on_auth_user_terkonfirmasi` on `auth.users` ([`supabase/email-selamat-datang.sql`](supabase/email-selamat-datang.sql)) calls the Edge Function asynchronously through `pg_net`. Sign-up never fails because of email.
+2. The Edge Function [`kirim-email-selamat-datang`](supabase/functions/kirim-email-selamat-datang/index.ts) only sends to a user who exists, is confirmed, was created within the last 7 days, and has not been emailed yet. It then stamps `app_metadata.email_selamat_datang_terkirim`, and also sends an idempotency key to Resend, so each user gets the email once. This makes the public function URL safe against abuse.
+
+Edge Function secrets (Supabase → Edge Functions → **Secrets**):
+
+| Secret | Required | Value |
+|---|---|---|
+| `RESEND_API_KEY` | Yes | API key from resend.com |
+| `EMAIL_FROM` | No | Sender, e.g. `Kasku <hello@yourdomain.com>`. Default: `Kasku <onboarding@resend.dev>` |
+| `APP_URL` | No | Link used in the email button. Default: `https://kasku-app.pages.dev` |
+
+> The default sender `onboarding@resend.dev` can only deliver to the Resend account owner's address. To email all users, verify your own domain in Resend (Domains → Add domain) and set `EMAIL_FROM` to an address on that domain.
+
+Deploy or update the function with the Supabase CLI:
+
+```bash
+supabase functions deploy kirim-email-selamat-datang --no-verify-jwt
+```
+
+Delivery can be checked in Supabase → Edge Functions → `kirim-email-selamat-datang` → **Logs**, or in the Resend dashboard → **Emails**.
+
+## Deployment (Cloudflare Pages)
+
+Connect the GitHub repository in Cloudflare → Workers & Pages → Create → Pages → *Connect to Git*, then use:
+
+| Setting | Value |
 |---|---|
-| Masuk / Daftar | Daftar, masuk, lupa password (link reset via email), login Google (jika diaktifkan) |
-| Onboarding | Buat dompet pertama + saldo awal; kategori bawaan dibuat otomatis |
-| Beranda | Kartu statistik (saldo, pemasukan, pengeluaran, arus kas bersih + % vs bulan lalu), grafik arus kas 6 bulan, dompet, transaksi terakhir |
-| Catat / Ubah transaksi | Pengeluaran, Pemasukan, Transfer; Simpan & catat lagi; Duplikat; Hapus |
-| Transaksi | Per bulan, dikelompokkan per tanggal; filter tipe/kategori/dompet; cari catatan (juga dari kolom cari di atas) |
-| Laporan | Kartu statistik + rasio tabungan, grafik Arus Kas 6 bulan (pemasukan/pengeluaran/keduanya), donat pengeluaran per kategori, pengeluaran terbesar, Insight & Tren otomatis |
-| Dompet | Tambah, ubah, arsipkan; hapus hanya jika belum ada transaksi |
-| Kategori | Tambah, ubah nama/ikon, sembunyikan; hapus hanya jika belum dipakai |
-| Lainnya (HP) | Kartu profil, menu Dompet/Kategori/Pengaturan, tombol Keluar |
-| Pengaturan | Ubah nama, ganti atau buat password, ekspor CSV, keluar |
+| Production branch | `main` |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Environment variables | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (type *Text*) |
 
-Aturan penting:
-- Transfer memindahkan saldo antar dompet dan **tidak** dihitung sebagai pemasukan/pengeluaran.
-- Saldo dompet = saldo awal + pemasukan − pengeluaran ± transfer.
-- Semua nominal dalam Rupiah, bilangan bulat.
+Every push to `main` triggers a new build. Routing uses `#/…` URLs, so no redirect rules are needed.
 
-## Struktur
+## Security notes
 
-| Lokasi | Isi |
-|---|---|
-| `src/lib/keuangan.js` | Fungsi inti: format Rupiah, saldo, ringkasan, laporan per kategori, filter, validasi, CSV |
-| `src/lib/insight.js` | Insight otomatis berbasis aturan (tabungan, kenaikan/penurunan kategori, proyeksi) |
-| `src/lib/*.test.js` | Tes untuk fungsi inti (`npm test`) |
-| `src/lib/api.js` | Lapisan data: Supabase, atau localStorage di Mode Demo |
-| `src/lib/DataContext.jsx` | State data aplikasi + aksi simpan/hapus |
-| `src/lib/rute.js` | Router sederhana berbasis hash (`#/riwayat`) |
-| `src/pages/` | Satu file per halaman |
-| `src/components/` | Komponen bersama: `Kerangka` (sidebar, topbar, nav HP), grafik, kartu statistik, input nominal, sheet, toast |
-| `supabase/schema.sql` | Skema database + Row Level Security |
+- **Public by design:** the Supabase project URL and publishable key appear in the browser bundle. Data protection comes from Row Level Security, not from hiding these values.
+- **Secrets live only on servers:** the Resend API key and Google client secret are stored in Supabase; the service-role key is injected by Supabase into the Edge Function at runtime. None of them are in this repository or in the site bundle.
+- `.env.local`, `.env`, and `dist/` are git-ignored.
 
-## Fase 2 (belum dikerjakan)
+## Project structure
 
-Anggaran per kategori, transaksi berulang, tren beberapa bulan.
+```
+├── index.html
+├── public/                     # favicon
+├── src/
+│   ├── App.jsx                 # session check + page routing
+│   ├── main.jsx
+│   ├── index.css               # design tokens (light/dark), layout, components
+│   ├── components/             # Kerangka (app shell), charts, stat cards, inputs, sheet, toast…
+│   ├── pages/                  # one file per page
+│   └── lib/
+│       ├── api.js              # data/auth gateway (Supabase or Demo Mode)
+│       ├── supabase.js         # Supabase client from env vars
+│       ├── DataContext.jsx     # in-memory app state + actions
+│       ├── keuangan.js         # finance logic (pure functions)
+│       ├── insight.js          # rule-based insights
+│       ├── pencarian.jsx       # shared search keyword
+│       ├── rute.js             # tiny hash router
+│       └── *.test.js           # unit tests
+└── supabase/
+    ├── schema.sql              # tables, RLS, indexes, hardening
+    ├── email-selamat-datang.sql
+    └── functions/kirim-email-selamat-datang/index.ts
+```
+
+## Roadmap (phase 2)
+
+Monthly budgets per category, recurring transactions, and multi-month trends.
